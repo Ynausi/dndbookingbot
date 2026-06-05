@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: dndbookingbot
+
+telegram:
+  bot:
+    token: ${BOT_TOKEN}
+
+sheets:
+  masters: ${GOOGLE_SPREADSHEET_ID}
