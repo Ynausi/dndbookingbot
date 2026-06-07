@@ -6,5 +6,7 @@ telegram:
   bot:
     token: ${BOT_TOKEN}
 
-sheets:
-  masters: ${GOOGLE_SPREADSHEET_ID}
+google:
+  sheets:
+    spreadsheet-id: ${GOOGLE_SPREADSHEET_ID}
+    credentials-path: classpath:google/service-account.json
