@@ -1,4 +1,4 @@
-package ru.ynausi.dndbookingbot.master;
+package ru.ynausi.dndbookingbot.configuration;
 
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Configuration;

@@ -6,7 +6,9 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Repository;
-import ru.ynausi.dndbookingbot.googleSheets.GoogleSheetsService;
+import ru.ynausi.dndbookingbot.googleSheets.GSMasterService;
+import ru.ynausi.dndbookingbot.schedule.Slot;
+//import ru.ynausi.dndbookingbot.googleSheets.GoogleSheetsService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,45 +19,25 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @CacheConfig(cacheNames = "masters")
 public class MasterRepositoryImpl implements MasterRepository{
-    private final GoogleSheetsService googleSheetsService;
+    private final GSMasterService gsMasterService;
 
     @Override
     @Cacheable
     public List<Master> getMasters() {
-        log.info("Читаю мастеров из Google Sheets");
-        return googleSheetsService.getMastersInfo();
+        log.info("Читаю лист мастеров из Google Sheets");
+        return gsMasterService.getMastersInfo();
     }
 
     @CacheEvict(allEntries = true)
     @Override
-    public void updateMasterTelegramIdAndChatId(Long telegramUserId, Long chatId, Integer rowNumber) {
-        googleSheetsService.updateMasterTelegramIdAndChatId(telegramUserId,chatId,rowNumber);
+    public void updateMasterTelegramIdAndChatId(Long telegramUserId, Long chatId, Master master) {
+        gsMasterService.updateMasterTelegramIdAndChatId(telegramUserId,chatId,master);
     }
 
     @CacheEvict(allEntries = true)
     @Override
-    public void updateMasterPhoto(String fileId, Integer rowNumber) {
-        googleSheetsService.updateMasterPhoto(fileId,rowNumber);
+    public void updateMasterPhoto(String fileId, Master master) {
+        gsMasterService.updateMasterPhoto(fileId,master);
     }
 
-    @Override
-    public Optional<Integer> findMasterRowByTelegramId(Long telegramUserId, Long chatId) {
-        return googleSheetsService
-                .findMasterRowByTelegramId(telegramUserId,chatId);
-    }
-
-    @Override
-    public List<LocalDate> getMasterRowByTelegramId(LocalDate start, LocalDate end, String masterCode) {
-        return List.of();
-    }
-
-    @Override
-    public List<String> getDatesForMaster(LocalDate start, LocalDate end, String masterCode,String selectedSlot) {
-        return googleSheetsService.findDatesForMaster(start,end,masterCode,selectedSlot);
-    }
-
-    @Override
-    public void addGameToMasterList(String selectedSlot, String sheetName, String date, String userName) {
-        googleSheetsService.addGameToMastersList(selectedSlot,sheetName,date,userName);
-    }
 }

@@ -1,5 +1,7 @@
 package ru.ynausi.dndbookingbot.master;
 
+import ru.ynausi.dndbookingbot.schedule.Slot;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -14,13 +16,11 @@ public interface MasterService {
 
     List<Master> getActiveMasters();
 
-    void updateMasterTelegramIdAndChatId(Long telegramUserId,Long chatId,Integer rowNumber);
+    void updateMasterTelegramIdAndChatId(Long telegramUserId,Long chatId,Master master);
 
-    void updateMasterPhoto(String fileId,Integer rowNumber);
+    void updateMasterPhoto(String fileId,Master master);
 
-    List<String> findFreeDatesForMaster(LocalDate start,LocalDate end,String masterCode,String selectedSlot);
+    Optional<String> findSheetNameForMaster(String masterCode);
 
-    Optional<Integer> findMasterRowByTelegramId(Long telegramId,Long chatId);
-
-    void addGameToMasterList(String selectedSlot,String sheetName,String date,String userName);
+    Optional<Master> findMasterByTelegramId(Long telegramUserId);
 }

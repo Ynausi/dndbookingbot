@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.ynausi.dndbookingbot.schedule.Slot;
+
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -14,7 +17,10 @@ public class BookingSession {
     private Long chatId;
     private String userName;
     private String selectedMasterCode;
-    private String selectedDate;
-    private String selectedSlot;
-    private String step;
+    private LocalDate selectedDate;
+    private BookingModeDateOrSlot bookingModeDateOrSlot;
+    private Slot selectedSlot;
+    private Steps step;
+    private Integer masterListMessageId;
+    private Integer masterViewMessageId;
 }

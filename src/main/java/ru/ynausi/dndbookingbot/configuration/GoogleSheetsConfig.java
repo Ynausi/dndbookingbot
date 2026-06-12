@@ -1,4 +1,4 @@
-package ru.ynausi.dndbookingbot.googleSheets;
+package ru.ynausi.dndbookingbot.configuration;
 
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import ru.ynausi.dndbookingbot.configuration.GoogleSheetsProperties;
 
 import java.io.InputStream;
 import java.util.List;

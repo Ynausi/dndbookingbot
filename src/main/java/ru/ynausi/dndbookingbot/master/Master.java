@@ -1,14 +1,19 @@
 package ru.ynausi.dndbookingbot.master;
 
+import lombok.Builder;
+
+@Builder
 public record Master(
-    String id,
+    Integer id,
     String name,
     String masterCode,
     String description,
     String sheetName,
-    String active,
-    String telegramUserId,
-    String chatId,
-    String photoFileId
+    Boolean active,
+    Long telegramUserId,
+    Long chatId,
+    String photoFileId,
+    String smallDescription,
+    Integer rowNumber
 )
 {}
