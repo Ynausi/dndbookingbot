@@ -14,4 +14,6 @@ public interface BookingSessionService {
     boolean selectDate(Long telegramUserId, LocalDate date);
 
     Optional<BookingSession> findByTelegramUserId(Long telegramUserId);
+
+    boolean delete(Long telegramUserId);
 }

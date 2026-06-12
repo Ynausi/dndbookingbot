@@ -35,6 +35,10 @@ public class MainMenuView {
     public void showFirstMenu(Long chatId) {
         InlineKeyboardMarkup markup = createFirstMenuKeyboard();
         Optional<Admin> admin = adminService.getAdmin();
+        if (admin.isEmpty()) {
+            sender.sendMessage(chatId, FIRST_MENU_TEXT, markup);
+            return;
+        }
         if (admin.get().getAdventurePhotoId().isEmpty()) {
             sender.sendMessage(chatId,FIRST_MENU_TEXT,markup);
             return;
@@ -54,7 +58,7 @@ public class MainMenuView {
     private InlineKeyboardMarkup createFirstMenuKeyboard() {
         return new InlineKeyboardMarkup(List.of(
                 new InlineKeyboardRow(button("Забронировать ваншот (приключение на один вечер)", CallbackData.ONE_SHOT)),
-                new InlineKeyboardRow(button("Забронировать компейн (долгое приключение)", CallbackData.COMPANY))
+                new InlineKeyboardRow(button("Забронировать кампейн (долгое приключение)", CallbackData.COMPANY))
         ));
     }
 

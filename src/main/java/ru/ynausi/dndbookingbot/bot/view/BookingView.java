@@ -31,6 +31,7 @@ public class BookingView {
     public static final String CONFIRM = "✅";
     public static final String BACK = "⬅️";
     public static final String CANCEL = "❌";
+    private static final String MASTER_BUTTON = "🧙‍♂️ Выбор мастера";
 
     public BookingView(TelegramSender sender, BookingSessionServiceImpl bookingSessionService, MasterService masterService, ScheduleService scheduleService) {
         this.sender = sender;
@@ -85,6 +86,28 @@ public class BookingView {
         return Optional.of(markup);
     }
 
+    public Optional<InlineKeyboardMarkup> showFreeBookingDates(Long chatId,Long telegramUserId) {
+        Set<LocalDate> dates = scheduleService.getFreeDatesForAllMasters();
+        List<InlineKeyboardButton> buttons = dates.stream()
+                .map(date->button(date.format(DATE_FORMATTER),CallbackData.date(date.format(DATE_FORMATTER))))
+                .toList();
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(splitButtonsByRows(buttons,2));
+        return Optional.of(markup);
+    }
+
+    public Optional<InlineKeyboardMarkup> showFreeBookingSlotForDate(Long chatId,LocalDate date) {
+        Set<Slot> slots = scheduleService.findFreeBookingSlotsForDate(date);
+        if (slots.isEmpty()) {
+            sender.sendMessage(chatId,"Нет свободных слотов на эту дату");
+            return Optional.empty();
+        }
+        List<InlineKeyboardButton> buttons = slots.stream()
+                .map(slot-> button(formatSlot(slot),CallbackData.slot(slot)))
+                .toList();
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(splitButtonsByRows(buttons,2));
+        return Optional.of(markup);
+    }
+
     public Optional<InlineKeyboardMarkup> showFreeBookingDatesForMaster(Long chatId,Long telegramUserId) {
         Optional<BookingSession> bookingSession = bookingSessionService.findByTelegramUserId(telegramUserId);
         if (bookingSession.isEmpty()) {
@@ -106,6 +129,14 @@ public class BookingView {
                 .toList();
         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(splitButtonsByRows(buttons,2));
         return Optional.of(markup);
+    }
+
+    public InlineKeyboardMarkup showBookingMasterOrDateOrTime(Long chatId) {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(List.of(
+                new InlineKeyboardRow(button(MASTER_BUTTON,CallbackData.MASTERS)),
+                new InlineKeyboardRow((button(DATE_BUTTON_TEXT,CallbackData.startFromDateOrTimeMode("date"))))
+        ));
+        return markup;
     }
 
     public InlineKeyboardMarkup showBookingDateOrTime(Long chatId) {

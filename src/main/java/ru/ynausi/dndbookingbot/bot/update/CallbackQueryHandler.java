@@ -5,10 +5,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageRe
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import ru.ynausi.dndbookingbot.booking.BookingModeDateOrSlot;
-import ru.ynausi.dndbookingbot.booking.BookingSession;
-import ru.ynausi.dndbookingbot.booking.BookingSessionServiceImpl;
-import ru.ynausi.dndbookingbot.booking.Steps;
+import ru.ynausi.dndbookingbot.booking.*;
 import ru.ynausi.dndbookingbot.bot.TelegramSender;
 import ru.ynausi.dndbookingbot.bot.callback.CallbackData;
 import ru.ynausi.dndbookingbot.bot.view.BookingTextFactory;
@@ -90,7 +87,7 @@ public class CallbackQueryHandler {
             return;
         }
         if(data.startsWith(CallbackData.DATE_OR_TIME_MODE)) {
-            handleBookingMode(callbackQuery,data);
+            handleDateOrTimeBookingMode(callbackQuery,data);
             return;
         }
         if (data.startsWith(CallbackData.MASTER_PAGE_PREFIX)) {
@@ -105,21 +102,29 @@ public class CallbackQueryHandler {
             handleMasterBackToList(callbackQuery,data);
             return;
         }
+        if (data.startsWith(CallbackData.START_FROM_DATE_OR_TIME)) {
+            handleStartFromDateOrTime(callbackQuery,data);
+            return;
+        }
+
         switch (data) {
-            case CallbackData.COMPANY -> sender.sendMessage(chatId,
-                    "Компейн бронируется по согласованию с мастером.\n" +
-                    "Уже отправили ему вашу ссылку. Скоро он с вами свяжется");
-            case CallbackData.BOOKING -> {
-                if (bookingSessionService.findByTelegramUserId(telegramUserId).isEmpty())  {
+            case CallbackData.COMPANY -> {
+                if (bookingSessionService.findByTelegramUserId(telegramUserId).isEmpty()) {
                     bookingSessionService.startSession(chatId,telegramUserId,userName);
                 }
-                bookingView.showBookingDates(chatId,telegramUserId);
+                Optional<BookingSession> bS = bookingSessionService.findByTelegramUserId(telegramUserId);
+                bS.get().setSessionMode(SessionMode.CAMPAIGN);
+                sender.removeInlineKeyBoard(callbackQuery);
+                Optional<Integer> messageId =  masterView.showMasters(chatId);
+                messageId.ifPresent(id->bS.get().setMasterListMessageId(id));
             }
             case CallbackData.ONE_SHOT -> {
-                mainMenuView.showStartMenu(chatId);
                 sender.removeInlineKeyBoard(callbackQuery);
+                bookingSessionService.startSession(chatId,telegramUserId,userName);
+                handleOneShot(callbackQuery);
             }
             case CallbackData.MASTERS -> {
+                sender.removeInlineKeyBoard(callbackQuery);
                 if (bookingSessionService.findByTelegramUserId(telegramUserId).isEmpty()) {
                     bookingSessionService.startSession(chatId,telegramUserId,userName);
                 }
@@ -129,6 +134,57 @@ public class CallbackQueryHandler {
             }
             default -> sender.sendMessage(chatId,"Неизвестная команда");
         }
+    }
+
+    private void handleStartFromDateOrTime(CallbackQuery callbackQuery, String data) {
+        Long chatId = callbackQuery.getMessage().getChatId();
+        Long telegramUserId = callbackQuery.getFrom().getId();
+        Optional<BookingSession> bS = bookingSessionService.findByTelegramUserId(telegramUserId);
+        String bookingMode = data.substring(CallbackData.START_FROM_DATE_OR_TIME.length());
+        if (bS.isEmpty()) {
+            sender.sendMessage(chatId,"Что-то не так с бронированием, попробуйте снова");
+            return;
+        }
+        if ("date".equals(bookingMode)) {
+            bS.get().setStep(Steps.DATE);
+            bS.get().setFirstStep(FirstStep.DATE);
+            String text = bookingTextFactory.buildMasterText(bS.get());
+            Optional<InlineKeyboardMarkup> keyboard = bookingView.showFreeBookingDates(chatId,telegramUserId);
+            if (keyboard.isEmpty()) {
+                sender.sendMessage(chatId,"У мастера нет свободных мест");
+                return;
+            }
+            bS.get().setBookingModeDateOrSlot(BookingModeDateOrSlot.BY_DATE);
+            sender.editTextMessage(callbackQuery,text,keyboard.get());
+        }
+        if ("slot".equals(bookingMode)) {
+            bS.get().setStep(Steps.SLOT);
+            bS.get().setFirstStep(FirstStep.SLOT);
+            InlineKeyboardMarkup keyboard = bookingView.showBookingTime(chatId);
+            String text = bookingTextFactory.buildMasterText(bS.get());
+            bS.get().setBookingModeDateOrSlot(BookingModeDateOrSlot.BY_SLOT);
+            sender.editTextMessage(callbackQuery,text,keyboard);
+        }
+    }
+
+    private void handleOneShot(CallbackQuery callbackQuery) {
+        Long chatId = callbackQuery.getMessage().getChatId();
+        Long telegramUserId = callbackQuery.getFrom().getId();
+        Optional<BookingSession> bS = bookingSessionService.findByTelegramUserId(telegramUserId);
+        if (bS.isEmpty()) {
+            sender.sendMessage(chatId,"Что-то не так с бронированием, попробуйте снова");
+            return;
+        }
+        bS.get().setStep(Steps.START);
+        String text = bookingTextFactory.buildMasterText(bS.get());
+        InlineKeyboardMarkup keyboard = bookingView.showBookingMasterOrDateOrTime(chatId);
+        Message message = sender.sendMessageAndGetMessage(chatId,text,keyboard);
+        if (message == null) {
+            sender.sendMessage(chatId,"Что-то не так сбронированием HandleOneShot");
+            return;
+        }
+        Integer messageId = message.getMessageId();
+        bS.get().setStartMenuId(messageId);
     }
 
     private void handleMasterBackToList(CallbackQuery callbackQuery, String data) {
@@ -153,15 +209,36 @@ public class CallbackQueryHandler {
         messageId.ifPresent(id->bS.get().setMasterViewMessageId(id));
     }
 
-    private void handleMasterPage(CallbackQuery callbackQuery, String data) {
+    private void handleMasterPage(CallbackQuery callbackQuery,String data) {
+        Long chatId = callbackQuery.getMessage().getChatId();
+        Long telegramUserId = callbackQuery.getFrom().getId();
         int page = Integer.parseInt(data.substring(CallbackData.MASTER_PAGE_PREFIX.length()));
-        List<Master> masters = masterService.getActiveMasters();
+
+        Optional<BookingSession> bs = bookingSessionService.findByTelegramUserId(telegramUserId);
+
+        List<Master> masters;
+
+        if (bs.isPresent()
+                && bs.get().getFirstStep() == FirstStep.DATE
+                && bs.get().getSelectedDate() != null
+                && bs.get().getSelectedSlot() != null) {
+
+            masters = scheduleService.findFreeMastersForDateAndSlot(
+                    bs.get().getSelectedDate(),
+                    bs.get().getSelectedSlot()
+            );
+
+        } else {
+            masters = masterService.getActiveMasters();
+        }
+
         String text = masterTextFactory.buildMasterPageText(masters, page);
         InlineKeyboardMarkup keyboard = masterKeyboardFactory.buildMasterPageKeyboard(masters, page);
+
         sender.editTextMessage(callbackQuery, text, keyboard);
     }
 
-    private void handleBookingMode(CallbackQuery callbackQuery,String data) {
+    private void handleDateOrTimeBookingMode(CallbackQuery callbackQuery,String data) {
         Long chatId = callbackQuery.getMessage().getChatId();
         Long telegramUserId = callbackQuery.getFrom().getId();
         String bookingMode = data.substring(CallbackData.DATE_OR_TIME_MODE.length());
@@ -170,7 +247,6 @@ public class CallbackQueryHandler {
             sender.sendMessage(chatId,"Что-то не так с бронированием, попробуйте снова");
             return;
         }
-
         if ("date".equals(bookingMode)) {
             bS.get().setBookingModeDateOrSlot(BookingModeDateOrSlot.BY_DATE);
             bS.get().setStep(Steps.DATE);
@@ -189,7 +265,7 @@ public class CallbackQueryHandler {
             sender.editTextMessage(callbackQuery,text,keyboard);
         }
         else {
-            sender.sendMessage(chatId,"Извините, что-то пошло не такHandleBookingMode");
+            sender.sendMessage(chatId,"Извините, что-то пошло не так handleDateOrTimeBookingMode");
         }
     }
 
@@ -205,13 +281,34 @@ public class CallbackQueryHandler {
             sender.sendMessage(chatId,"Извините, что-то пошло не так");
             return;
         }
-        sender.removeInlineKeyboard(chatId, bS.get().getMasterListMessageId());
-        sender.removeInlineKeyboard(chatId,bS.get().getMasterViewMessageId());
         bS.get().setSelectedMasterCode(masterCode);
-        bS.get().setStep(Steps.BOOKING_MODE);
-        String text = bookingTextFactory.buildMasterText(bS.get());
-        InlineKeyboardMarkup keyboard = bookingView.showBookingDateOrTime(chatId);
-        sender.sendMessage(chatId,text,keyboard);
+        if (bS.get().getSelectedMasterCode() != null
+                && bS.get().getFirstStep() == null
+                &&bS.get().getSessionMode() == null) {
+            sender.deleteMessageById(chatId, bS.get().getMasterListMessageId());
+            sender.deleteMessageById(chatId,bS.get().getStartMenuId());
+            sender.removeInlineKeyboard(chatId,bS.get().getMasterViewMessageId());
+            bS.get().setSelectedMasterCode(masterCode);
+            bS.get().setStep(Steps.BOOKING_MODE);
+            String text = bookingTextFactory.buildMasterText(bS.get());
+            InlineKeyboardMarkup keyboard = bookingView.showBookingDateOrTime(chatId);
+            sender.sendMessage(chatId,text,keyboard);
+        } else if (bS.get().getSessionMode() == null){
+            sender.deleteMessageById(chatId, bS.get().getMasterListMessageId());
+            sender.deleteMessageById(chatId,bS.get().getStartMenuId());
+            sender.removeInlineKeyboard(chatId,bS.get().getMasterViewMessageId());
+            bS.get().setStep(Steps.CONFIRM);
+            String text = bookingTextFactory.buildMasterText(bS.get());
+            InlineKeyboardMarkup keyboard = bookingView.showConfirm(chatId);
+            sender.sendMessage(chatId,text,keyboard);
+        } else {
+            sender.deleteMessageById(chatId, bS.get().getMasterListMessageId());
+            sender.removeInlineKeyboard(chatId,bS.get().getMasterViewMessageId());
+            sender.sendMessage(master.get().chatId(),"У вас хотят забронировать кампейн " +"@"+ bS.get().getUserName());
+            sender.sendMessage(chatId,
+                    "Компейн бронируется по согласованию с мастером.\n" +
+                            "Уже отправили ему вашу ссылку. Скоро он с вами свяжется");
+        }
     }
 
     private void handleSlot(CallbackQuery callbackQuery,String data) {
@@ -229,20 +326,27 @@ public class CallbackQueryHandler {
             sender.sendMessage(chatId,"Что-то не так с бронью. Начните заново");
             return;
         }
-        if (bS.get().getBookingModeDateOrSlot()==BookingModeDateOrSlot.BY_SLOT) {
-            Optional<InlineKeyboardMarkup> keyboard = bookingView.showBookingDates(chatId,telegramUserId);
-            if (keyboard.isEmpty()) {
-                sender.sendMessage(chatId,"Видимо у мастера нет свободных мест на месяц вперёд");
+        if (bS.get().getFirstStep() == null) {
+            if (bS.get().getBookingModeDateOrSlot()==BookingModeDateOrSlot.BY_SLOT) {
+                Optional<InlineKeyboardMarkup> keyboard = bookingView.showBookingDates(chatId,telegramUserId);
+                if (keyboard.isEmpty()) {
+                    sender.sendMessage(chatId,"Видимо у мастера нет свободных мест на месяц вперёд");
+                }
+                bS.get().setStep(Steps.DATE);
+                String text = bookingTextFactory.buildMasterText(bS.get());
+                sender.editTextMessage(callbackQuery,text,keyboard.get());
             }
-            bS.get().setStep(Steps.DATE);
+            if (bS.get().getBookingModeDateOrSlot() == BookingModeDateOrSlot.BY_DATE) {
+                InlineKeyboardMarkup keyboard = bookingView.showConfirm(chatId);
+                bS.get().setStep(Steps.CONFIRM);
+                String text = bookingTextFactory.buildMasterText(bS.get());
+                sender.editTextMessage(callbackQuery,text,keyboard);
+            }
+        } else if (bS.get().getFirstStep() == FirstStep.DATE) {
+            Optional<Integer> messageId =  masterView.showFreeMastersForDateAndSlot(chatId,bS.get().getSelectedDate(),bS.get().getSelectedSlot());
+            messageId.ifPresent(id->bS.get().setMasterListMessageId(id));
             String text = bookingTextFactory.buildMasterText(bS.get());
-            sender.editTextMessage(callbackQuery,text,keyboard.get());
-        }
-        if (bS.get().getBookingModeDateOrSlot() == BookingModeDateOrSlot.BY_DATE) {
-            InlineKeyboardMarkup keyboard = bookingView.showConfirm(chatId);
-            bS.get().setStep(Steps.CONFIRM);
-            String text = bookingTextFactory.buildMasterText(bS.get());
-            sender.editTextMessage(callbackQuery,text,keyboard);
+            sender.editTextMessage(callbackQuery,text,null);
         }
     }
 
@@ -261,20 +365,41 @@ public class CallbackQueryHandler {
             sender.sendMessage(chatId,"Что-то не так с бронированием. Начните заново");
             return;
         }
-        if (bS.get().getBookingModeDateOrSlot() == BookingModeDateOrSlot.BY_SLOT) {
-            bS.get().setStep(Steps.CONFIRM);
-            InlineKeyboardMarkup keyboard = bookingView.showConfirm(chatId);
-            String text = bookingTextFactory.buildMasterText(bS.get());
-            sender.editTextMessage(callbackQuery,text,keyboard);
-        }
-        if (bS.get().getBookingModeDateOrSlot() == BookingModeDateOrSlot.BY_DATE) {
+        if (bS.get().getFirstStep()==null) {
+            if (bS.get().getBookingModeDateOrSlot() == BookingModeDateOrSlot.BY_SLOT) {
+                bS.get().setStep(Steps.CONFIRM);
+                InlineKeyboardMarkup keyboard = bookingView.showConfirm(chatId);
+                String text = bookingTextFactory.buildMasterText(bS.get());
+                sender.editTextMessage(callbackQuery,text,keyboard);
+            }
+            if (bS.get().getBookingModeDateOrSlot() == BookingModeDateOrSlot.BY_DATE) {
+                bS.get().setStep(Steps.SLOT);
+                Optional<Master> master = masterService.findByMasterCode(bS.get().getSelectedMasterCode());
+                if (master.isEmpty()) {
+                    sender.sendMessage(chatId, "Мастер не найден. Начните бронирование заново");
+                    return;
+                }
+                Optional<InlineKeyboardMarkup> keyboard =
+                        bookingView.showFreeBookingSlotForMasterByDate(
+                                chatId,
+                                master.get().masterCode(),
+                                LocalDate.parse(selectedDate,DATE_FORMATTER));
+                if (keyboard.isEmpty()) {
+                    sender.sendMessage(chatId,"У мастера нет свободных слотов в этот день");
+                    return;
+                }
+                String text = bookingTextFactory.buildMasterText(bS.get());
+                sender.editTextMessage(callbackQuery,text,keyboard.get());
+            }
+        } else if (bS.get().getFirstStep() == FirstStep.DATE) {
             bS.get().setStep(Steps.SLOT);
             Optional<InlineKeyboardMarkup> keyboard =
-                    bookingView.showFreeBookingSlotForMasterByDate(chatId,
-                            bS.get().getSelectedMasterCode(),
-                            bS.get().getSelectedDate());
+                    bookingView.showFreeBookingSlotForDate(
+                            chatId,
+                            LocalDate.parse(selectedDate,DATE_FORMATTER));
             if (keyboard.isEmpty()) {
-                sender.sendMessage(chatId,"Видимо у мастера нет свободных мест");
+                sender.sendMessage(chatId,"У мастера нет свободных слотов в этот день");
+                return;
             }
             String text = bookingTextFactory.buildMasterText(bS.get());
             sender.editTextMessage(callbackQuery,text,keyboard.get());

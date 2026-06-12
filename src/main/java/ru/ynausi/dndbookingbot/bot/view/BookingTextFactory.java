@@ -9,6 +9,7 @@ import ru.ynausi.dndbookingbot.master.Master;
 import ru.ynausi.dndbookingbot.master.MasterService;
 import ru.ynausi.dndbookingbot.schedule.Slot;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 @Component
@@ -16,7 +17,8 @@ import java.util.Optional;
 public class BookingTextFactory {
     private final TelegramSender sender;
     private final MasterService masterService;
-
+    private static final DateTimeFormatter DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy");
     private static final String START_MESSAGE ="""
                 🎲 Бронирование игры
                 
@@ -31,15 +33,18 @@ public class BookingTextFactory {
     }
 
     public String buildMasterText(BookingSession bookingSession) {
-        Optional<Master> master = masterService.findByMasterCode(bookingSession.getSelectedMasterCode());
-        String masterName = master.map(Master::name).orElse("Не найден");
+        //Optional<Master> master = masterService.findByMasterCode(bookingSession.getSelectedMasterCode());
+        String masterName = bookingSession.getSelectedMasterCode() == null
+                ? "Не выбран"
+                : masterService.findByMasterCode(bookingSession.getSelectedMasterCode()).map(Master::name).get();
         String date = bookingSession.getSelectedDate() == null
                 ? "Не выбрана"
-                : bookingSession.getSelectedDate().toString();
+                : bookingSession.getSelectedDate().format(DATE_FORMATTER);
         String time = bookingSession.getSelectedSlot() == null
                 ? "Не выбрано"
                 : formatSlot(bookingSession.getSelectedSlot());
         String message = "";
+        if (bookingSession.getStep() == Steps.START) message = "С чего начнем бронирование?";
         if (bookingSession.getStep() == Steps.DATE) message ="Выберите дату";
         if (bookingSession.getStep() == Steps.SLOT) message = "Выберите время";
         if (bookingSession.getStep() == Steps.BOOKING_MODE) message = "С чего начнём бронирование?";

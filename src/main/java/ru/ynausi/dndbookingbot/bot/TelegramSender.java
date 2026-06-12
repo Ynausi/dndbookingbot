@@ -103,6 +103,24 @@ public class TelegramSender {
                 .build();
         return executeAndGetId(sendMessage);
     }
+    public void deleteMessage(CallbackQuery callbackQuery) {
+        Long chatId = callbackQuery.getMessage().getChatId();
+        Integer messageId = callbackQuery.getMessage().getMessageId();
+
+        DeleteMessage deleteMessage = DeleteMessage.builder()
+                .chatId(chatId)
+                .messageId(messageId)
+                .build();
+        execute(deleteMessage);
+    }
+
+    public void deleteMessageById(Long chatId,Integer messageId){
+        DeleteMessage deleteMessage = DeleteMessage.builder()
+                .chatId(chatId)
+                .messageId(messageId)
+                .build();
+        execute(deleteMessage);
+    }
 
     private  @Nullable Message executeAndGetId(SendMessage message) {
         try {
@@ -129,18 +147,6 @@ public class TelegramSender {
             log.error("Не удалось обновить сообщение в chatId={}",editMessageText.getChatId());
         }
     }
-
-    public void deleteMessage(CallbackQuery callbackQuery) {
-        Long chatId = callbackQuery.getMessage().getChatId();
-        Integer messageId = callbackQuery.getMessage().getMessageId();
-
-        DeleteMessage deleteMessage = DeleteMessage.builder()
-                .chatId(chatId)
-                .messageId(messageId)
-                .build();
-        execute(deleteMessage);
-    }
-
 
     public void removeInlineKeyBoard(CallbackQuery callbackQuery){
         Long chatId = callbackQuery.getMessage().getChatId();

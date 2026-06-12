@@ -21,14 +21,14 @@ public class MasterServiceImpl implements MasterService{
 
     @Override
     public Optional<Master> getById(String id) {
-        return getMasters().stream()
+        return masterRepository.getMasters().stream()
                 .filter(master -> Integer.parseInt(id) == master.id())
                 .findFirst();
     }
 
     @Override
     public Optional<Master> findByMasterCode(String masterCode) {
-        return getMasters().stream()
+        return masterRepository.getMasters().stream()
                 .filter(master -> masterCode.equals(master.masterCode()))
                 .findFirst();
     }

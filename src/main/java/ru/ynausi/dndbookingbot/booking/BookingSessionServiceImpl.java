@@ -64,4 +64,8 @@ public class BookingSessionServiceImpl implements BookingSessionService{
         return true;
     }
 
+    public boolean delete(Long telegramUserId) {
+        return booking.remove(telegramUserId) != null;
+    }
+
 }

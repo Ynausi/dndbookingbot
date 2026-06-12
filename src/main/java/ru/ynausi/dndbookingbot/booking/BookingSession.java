@@ -18,9 +18,12 @@ public class BookingSession {
     private String userName;
     private String selectedMasterCode;
     private LocalDate selectedDate;
+    private SessionMode sessionMode;
     private BookingModeDateOrSlot bookingModeDateOrSlot;
+    private FirstStep firstStep;
     private Slot selectedSlot;
     private Steps step;
     private Integer masterListMessageId;
     private Integer masterViewMessageId;
+    private Integer startMenuId;
 }

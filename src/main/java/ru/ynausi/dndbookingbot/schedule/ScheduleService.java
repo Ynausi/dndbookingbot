@@ -1,5 +1,7 @@
 package ru.ynausi.dndbookingbot.schedule;
 
+import ru.ynausi.dndbookingbot.master.Master;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -19,5 +21,13 @@ public interface ScheduleService {
 
      Set<Slot> getFreeBookingSlotsForMasterByDate(String masterCode,LocalDate date);
 
-    boolean updateMasterSchedule(String masterCode,LocalDate date, Slot slot,String userName);
+     boolean updateMasterSchedule(String masterCode,LocalDate date, Slot slot,String userName);
+
+     Set<LocalDate> getFreeDatesForAllMasters();
+
+     Set<Slot> findFreeBookingSlotsForDate(LocalDate date);
+
+     List<Master> findFreeMastersForDateAndSlot(LocalDate date, Slot slot);
+
+     Map<String,Map<LocalDate,DaySchedule>> getActiveMastersSchedule();
 }

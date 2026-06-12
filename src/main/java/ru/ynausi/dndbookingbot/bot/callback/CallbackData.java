@@ -18,12 +18,13 @@ public class CallbackData {
     public static final String SLOT_FIRST = "first";
     public static final String SLOT_SECOND = "second";
 
-    public static final String DATE_OR_TIME_MODE = "BookingMode:";
+    public static final String DATE_OR_TIME_MODE = "BookingModeDateOrTime:";
 
     public static final String MASTER_PAGE_PREFIX = "MASTER_PAGE:";
     public static final String MASTER_VIEW_PREFIX = "MASTER_VIEW:";
     public static final String IGNORE = "IGNORE";
     public static final String MASTER_BACK_TO_LIST = "MASTER_BACK_TO_LIST:";
+    public static final String START_FROM_DATE_OR_TIME = "BookingStartModeTimeOrDate:";
     private CallbackData() {
     }
 
@@ -61,5 +62,9 @@ public class CallbackData {
 
     public static String masterBackToList(int page){
         return MASTER_BACK_TO_LIST+page;
+    }
+
+    public static String startFromDateOrTimeMode(String masterOrDate) {
+        return START_FROM_DATE_OR_TIME + masterOrDate;
     }
 }
