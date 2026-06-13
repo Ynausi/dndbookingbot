@@ -1,4 +1,4 @@
-package ru.ynausi.dndbookingbot.googleSheets;
+package ru.ynausi.dndbookingbot.admin;
 
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.UpdateValuesResponse;
@@ -6,19 +6,16 @@ import com.google.api.services.sheets.v4.model.ValueRange;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ru.ynausi.dndbookingbot.admin.Admin;
 import ru.ynausi.dndbookingbot.configuration.GoogleSheetsProperties;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 
-public class GSAdminServiceImpl implements GSAdminService{
+public class GSAdminServiceImpl implements GSAdminService {
     private final Sheets sheets;
     private final GoogleSheetsProperties properties;
 
@@ -109,20 +106,31 @@ public class GSAdminServiceImpl implements GSAdminService{
     public Optional<Admin> getAdmin() {
         log.info("Читаю лист админа и вывожу админа");
         try {
-            String range = "Admin!A:B";
+            String range = "Admin!A1:B";
             ValueRange response = sheets.spreadsheets()
                     .values()
                     .get(properties.spreadSheetId(), range)
+                    .setMajorDimension("ROWS")
                     .execute();
-            List<List<Object>> rows =  response.getValues();
-            Admin admin = new Admin(
-                    getCell(rows, 0, 1),
-                    getCell(rows, 1, 1),
-                    getCell(rows, 2, 1),
-                    getCell(rows, 3, 1),
-                    getCell(rows, 4, 1),
-                    getCell(rows, 5, 1)
-            );
+            List<List<Object>> rows =response.getValues();
+
+            Map<String, String> adminData = new HashMap<>();
+            for (List<Object> row : rows) {
+                String key = getCell(row, 0);
+                String value = getCell(row, 1);
+
+                if (!key.isBlank()) {
+                    adminData.put(key, value);
+                }
+            }
+            Admin admin = Admin.builder()
+                    .telegramUserId(adminData.get("telegramUserId"))
+                    .chatId(adminData.get("chatId"))
+                    .adminCode(adminData.get("code"))
+                    .adventurePhotoId(adminData.get("adventure"))
+                    .oneShotPhotoId(adminData.get("oneshot"))
+                    .companyPhotoId(adminData.get("company"))
+                    .build();
             return Optional.of(admin);
         } catch (IOException e) {
             log.error("Ошибка при чтении данных из листа админа",e);

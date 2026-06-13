@@ -96,12 +96,12 @@ public class TextMessageHandler {
             return;
         }
 
-        List<Master> masters = masterService.getMasters();
         Optional<Master> master = masterService.findByMasterCode(masterCode);
         if (master.isEmpty()) {
             sender.sendMessage(chatId,"Не удалось найти этого мастера. Попробуйте выбрать другого");
             return;
         }
+
         sessionService.startSession(telegramUserId,"master");
         masterService.updateMasterTelegramIdAndChatId(telegramUserId,chatId,master.get());
         sender.sendMessage(chatId,"Отлично, ваши данные были обновлены. Теперь отправьте своё фото");

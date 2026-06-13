@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.ynausi.dndbookingbot.configuration.GoogleSheetsProperties;
 import ru.ynausi.dndbookingbot.master.Master;
-import ru.ynausi.dndbookingbot.master.MasterRepository;
+import ru.ynausi.dndbookingbot.master.MasterCacheService;
 import ru.ynausi.dndbookingbot.master.MasterService;
 
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class GSScheduleService implements GSSchedule{
-    private final MasterRepository masterRepository;
+    private final MasterCacheService masterCache;
     private final MasterService masterService;
     private final Sheets sheets;
     private final GoogleSheetsProperties properties;
@@ -31,7 +31,7 @@ public class GSScheduleService implements GSSchedule{
             DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     public Map<String,Map<LocalDate,DaySchedule>> readMastersSchedule() {
-        List<Master> masters = masterRepository.getMasters();
+        List<Master> masters = masterCache.getMasters();
         Map<String,Map<LocalDate,DaySchedule>> result = new HashMap<>();
         List<String> ranges = masters.stream()
                 .map(master -> "'" + master.sheetName() + "'!A2:C")

@@ -1,6 +1,4 @@
-package ru.ynausi.dndbookingbot.googleSheets;
-
-import ru.ynausi.dndbookingbot.admin.Admin;
+package ru.ynausi.dndbookingbot.admin;
 
 import java.util.List;
 import java.util.Optional;

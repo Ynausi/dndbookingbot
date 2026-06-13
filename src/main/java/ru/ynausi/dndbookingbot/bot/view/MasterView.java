@@ -35,6 +35,7 @@ public class MasterView {
         this.scheduleService = scheduleService;
     }
 
+
     public Optional<Integer> showMasters(Long chatId) {
         List<Master> masters = masterService.getActiveMasters();
         if (masters.isEmpty()) {
