@@ -12,23 +12,23 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class ScheduleServiceImpl implements ScheduleService{
-    private final SceduleRepository sceduleRepository;
+    private final SceduleCache sceduleCache;
     private final MasterService masterService;
 
     @Override
     public Map<String, Map<LocalDate, DaySchedule>> getMastersSchedule() {
-        return sceduleRepository.getMastersSchedule();
+        return sceduleCache.getMastersSchedule();
     }
 
     @Override
     public Map<LocalDate, DaySchedule> getMasterSchedule(String masterCode) {
-        return sceduleRepository.getMastersSchedule().get(masterCode);
+        return sceduleCache.getMastersSchedule().get(masterCode);
     }
 
     @Override
     public Set<LocalDate> getFreeDatesForMasterBySlot(String masterCode,Slot slot) {
         Set<LocalDate> result = new TreeSet<>();
-        Map<String, Map<LocalDate, DaySchedule>> schedule = sceduleRepository.getMastersSchedule();
+        Map<String, Map<LocalDate, DaySchedule>> schedule = sceduleCache.getMastersSchedule();
         Map<LocalDate,DaySchedule> masterSchedule= schedule.get(masterCode);
         Set<LocalDate> dates = masterSchedule.keySet();
         for (LocalDate date:dates) {
@@ -49,7 +49,7 @@ public class ScheduleServiceImpl implements ScheduleService{
     @Override
     public Set<LocalDate> getFreeDatesForMaster(String masterCode) {
         Set<LocalDate> result = new TreeSet<>();
-        Map<String, Map<LocalDate, DaySchedule>> schedule = sceduleRepository.getMastersSchedule();
+        Map<String, Map<LocalDate, DaySchedule>> schedule = sceduleCache.getMastersSchedule();
         Map<LocalDate,DaySchedule> masterSchedule= schedule.get(masterCode);
         Set<LocalDate> dates = masterSchedule.keySet();
         for (LocalDate date:dates) {
@@ -63,7 +63,7 @@ public class ScheduleServiceImpl implements ScheduleService{
     @Override
     public Set<Slot> getFreeSlotsForMasterByDate(String masterCode, LocalDate date) {
         Set<Slot> result = new HashSet<>();
-        Map<String, Map<LocalDate, DaySchedule>> schedule = sceduleRepository.getMastersSchedule();
+        Map<String, Map<LocalDate, DaySchedule>> schedule = sceduleCache.getMastersSchedule();
         Map<LocalDate,DaySchedule> masterSchedule= schedule.get(masterCode);
         DaySchedule daySchedule = masterSchedule.get(date);
         if ("+".equals(daySchedule.firstSlotValue())) result.add(Slot.FIRST);
@@ -74,7 +74,7 @@ public class ScheduleServiceImpl implements ScheduleService{
     @Override
     public Set<Slot> getFreeBookingSlotsForMasterByDate(String masterCode, LocalDate date) {
         Set<Slot> result = new HashSet<>();
-        Map<String, Map<LocalDate, DaySchedule>> schedule = sceduleRepository.getMastersSchedule();
+        Map<String, Map<LocalDate, DaySchedule>> schedule = sceduleCache.getMastersSchedule();
         Map<LocalDate,DaySchedule> masterSchedule= schedule.get(masterCode);
         DaySchedule daySchedule = masterSchedule.get(date);
         if ("+".equals(daySchedule.firstSlotValue())) result.add(Slot.FIRST);
@@ -84,7 +84,7 @@ public class ScheduleServiceImpl implements ScheduleService{
 
     @Override
     public boolean updateMasterSchedule(String masterCode, LocalDate date, Slot slot, String userName) {
-        return sceduleRepository.updateMasterSchedule(masterCode,date,slot,userName);
+        return sceduleCache.updateMasterSchedule(masterCode,date,slot,userName);
     }
 
     @Override
@@ -144,7 +144,7 @@ public class ScheduleServiceImpl implements ScheduleService{
 
     @Override
     public Map<String, Map<LocalDate, DaySchedule>> getActiveMastersSchedule() {
-        Map<String,Map<LocalDate,DaySchedule>> allMastersSchedule = sceduleRepository.getMastersSchedule();
+        Map<String,Map<LocalDate,DaySchedule>> allMastersSchedule = sceduleCache.getMastersSchedule();
         List<Master> masters = masterService.getActiveMasters();
         Map<String,Map<LocalDate,DaySchedule>> allActiveMastersSchedule = new LinkedHashMap<>();
         for (Master master:masters) {

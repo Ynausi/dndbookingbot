@@ -60,6 +60,8 @@ public class CallbackQueryHandler {
     }
 
     public void handle(CallbackQuery callbackQuery) {
+        sender.answerCallbackQuery(callbackQuery);
+
         String data = callbackQuery.getData();
         Long chatId = callbackQuery.getMessage().getChatId();
         Long telegramUserId = callbackQuery.getFrom().getId();

@@ -4,6 +4,7 @@ import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
@@ -50,6 +51,13 @@ public class TelegramSender {
                 .caption(caption)
                 .build();
         execute(photo);
+    }
+
+    public void answerCallbackQuery(CallbackQuery callbackQuery) {
+        AnswerCallbackQuery answer = AnswerCallbackQuery.builder()
+                .callbackQueryId(callbackQuery.getId())
+                .build();
+        execute(answer);
     }
 
     public void sendPhoto(Long chatId,String photoFileId,String caption,InlineKeyboardMarkup markup) {
@@ -120,6 +128,14 @@ public class TelegramSender {
                 .messageId(messageId)
                 .build();
         execute(deleteMessage);
+    }
+
+    private void execute(AnswerCallbackQuery answer) {
+        try {
+            telegramClient.execute(answer);
+        } catch (TelegramApiException e) {
+            log.error("Не удалось ответить на callbackQuery id={}", answer.getCallbackQueryId(), e);
+        }
     }
 
     private  @Nullable Message executeAndGetId(SendMessage message) {

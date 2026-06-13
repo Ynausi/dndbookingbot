@@ -32,11 +32,19 @@ public class GSMasterServiceImpl implements GSMasterService{
                     .get(properties.spreadSheetId(), range)
                     .execute();
             List<List<Object>> rows = response.getValues();
-            Map<String,Integer> headerMap = readHeader();
+            List<Object> headerRows = rows.getFirst();
+            /// //Формирую список заголовков
+            Map<String,Integer> headerMap = new HashMap<>();
+            int i = 0;
+            for (Object header : headerRows) {
+                headerMap.put(header.toString(), i);
+                i++;
+            }
             if (headerMap.isEmpty()) {
                 log.error("Ошибка при чтении заголовков в листе Мастеров");
                 return List.of();
             }
+            ///
             List<Master> masters = new ArrayList<>();
             for (int rowIndex = 1; rowIndex < rows.size(); rowIndex++) {
                 List<Object> row = rows.get(rowIndex);
