@@ -20,17 +20,45 @@ public class GSAdminServiceImpl implements GSAdminService {
     private final GoogleSheetsProperties properties;
 
     @Override
-    public void updateAdminTelegramIdAndChatId(Long telegramUserId, Long chatId) {
+    public Optional<Admin> getAdmin() {
+        log.info("Читаю лист админа");
+        List<List<Object>> rows = getAdminRows();
+        if (rows.isEmpty()) {
+            return Optional.empty();
+        }
+        Map<String, String> adminData = new HashMap<>();
+        for (List<Object> row : rows) {
+            String key = getCell(row, 0);
+            String value = getCell(row, 1);
+
+            if (!key.isBlank()) {
+                adminData.put(key, value);
+            }
+        }
+        Admin admin = Admin.builder()
+                .telegramUserId(Long.valueOf(adminData.get("telegramUserId")))
+                .chatId(Long.valueOf(adminData.get("chatId")))
+                .adminCode(adminData.get("code"))
+                .adventurePhotoId(adminData.get("adventure"))
+                .oneShotPhotoId(adminData.get("oneshot"))
+                .companyPhotoId(adminData.get("company"))
+                .build();
+        log.info("Прочитал админа и добавил в кэш");
+        return Optional.of(admin);
+    }
+
+    @Override
+    public boolean updateAdminTelegramIdAndChatId(Long telegramUserId, Long chatId) {
         log.info("Пробую записать админа: telegramUserId={}, chatId={}",
                 telegramUserId, chatId);
         try {
             List<List<Object>> rows = getAdminRows();
             List<String> updatedRows = new ArrayList<>();
-            Integer iter =1;
+            int iter =1;
             for (List<Object> row:rows) {
                 String currentRow = getCell(row,0);
-                if (currentRow.equals("telegramUserId")) updatedRows.add(iter.toString());
-                if (currentRow.equals("chatId")) updatedRows.add(iter.toString());
+                if (currentRow.equals("telegramUserId")) updatedRows.add(Integer.toString(iter));
+                if (currentRow.equals("chatId")) updatedRows.add(Integer.toString(iter));
                 iter++;
             }
             String range = "Admin!B"+updatedRows.getFirst()+":B"+updatedRows.getLast();
@@ -43,20 +71,22 @@ public class GSAdminServiceImpl implements GSAdminService {
                     .setValueInputOption("RAW")
                     .execute();
             log.info("Обновлено ячеек: {}", result.getUpdatedCells());
+            return true;
         } catch (IOException e ) {
             log.error("Ошибка при записи данных админа в Google Sheets", e);
         }
+        return false;
     }
 
     @Override
-    public void updatePhotoOnAdminList(Long telegramId, String fileId,String photoName) {
+    public boolean updatePhotoOnAdminList(String fileId,String photoName) {
         log.info("Пробую обновить фото");
         List<List<Object>> rows = getAdminRows();
         List<String> updatedRows = new ArrayList<>();
-        Integer iter =1;
+        int iter =1;
         for (List<Object> row:rows) {
             String currentRow = getCell(row, 0);
-            if (currentRow.equals(photoName)) updatedRows.add(iter.toString());
+            if (currentRow.equals(photoName)) updatedRows.add(Integer.toString(iter));
             iter++;
         }
         String range = "Admin!B"+updatedRows.getFirst();
@@ -69,26 +99,14 @@ public class GSAdminServiceImpl implements GSAdminService {
                     .setValueInputOption("RAW")
                     .execute();
             log.info("Обновлено ячеек: {}", result.getUpdatedCells());
+            return true;
         } catch (IOException e ) {
             log.error("Ошибка при записи данных админа в Google Sheets", e);
-        }
-    }
-
-    @Override
-    public boolean checkIfAdmin(String adminCode) {
-        List<List<Object>> rows = getAdminRows();
-        for (List<Object> row:rows) {
-            String currentRow = getCell(row,1);
-            if (currentRow.equals(adminCode)) {
-                return true;
-            }
         }
         return false;
     }
 
-    @Override
-    public List<List<Object>> getAdminRows() {
-        log.info("Читаю лист админа");
+    private List<List<Object>> getAdminRows() {
         try {
             String range = "Admin!A:B";
             ValueRange response = sheets.spreadsheets()
@@ -100,56 +118,6 @@ public class GSAdminServiceImpl implements GSAdminService {
             log.error("Ошибка при чтении данных из листа админа",e);
             return List.of();
         }
-    }
-
-    @Override
-    public Optional<Admin> getAdmin() {
-        log.info("Читаю лист админа и вывожу админа");
-        try {
-            String range = "Admin!A1:B";
-            ValueRange response = sheets.spreadsheets()
-                    .values()
-                    .get(properties.spreadSheetId(), range)
-                    .setMajorDimension("ROWS")
-                    .execute();
-            List<List<Object>> rows =response.getValues();
-
-            Map<String, String> adminData = new HashMap<>();
-            for (List<Object> row : rows) {
-                String key = getCell(row, 0);
-                String value = getCell(row, 1);
-
-                if (!key.isBlank()) {
-                    adminData.put(key, value);
-                }
-            }
-            Admin admin = Admin.builder()
-                    .telegramUserId(adminData.get("telegramUserId"))
-                    .chatId(adminData.get("chatId"))
-                    .adminCode(adminData.get("code"))
-                    .adventurePhotoId(adminData.get("adventure"))
-                    .oneShotPhotoId(adminData.get("oneshot"))
-                    .companyPhotoId(adminData.get("company"))
-                    .build();
-            return Optional.of(admin);
-        } catch (IOException e) {
-            log.error("Ошибка при чтении данных из листа админа",e);
-            return Optional.empty();
-        }
-    }
-
-    private String getCell(List<List<Object>> rows, int rowIndex, int columnIndex) {
-        if (rows == null || rows.size() <= rowIndex) {
-            return "";
-        }
-
-        List<Object> row = rows.get(rowIndex);
-
-        if (row == null || row.size() <= columnIndex || row.get(columnIndex) == null) {
-            return "";
-        }
-
-        return row.get(columnIndex).toString();
     }
 
     private String getCell(List<Object> row,int index) {

@@ -8,8 +8,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class Admin {
-    private String telegramUserId;
-    private String chatId;
+    private Long telegramUserId;
+    private Long chatId;
     private String adminCode;
     private String adventurePhotoId;
     private String oneShotPhotoId;
