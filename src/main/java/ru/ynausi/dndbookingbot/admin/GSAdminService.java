@@ -1,6 +1,5 @@
 package ru.ynausi.dndbookingbot.admin;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface GSAdminService {

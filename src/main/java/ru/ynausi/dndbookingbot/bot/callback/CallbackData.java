@@ -25,6 +25,8 @@ public class CallbackData {
     public static final String IGNORE = "IGNORE";
     public static final String MASTER_BACK_TO_LIST = "MASTER_BACK_TO_LIST:";
     public static final String START_FROM_DATE_OR_TIME = "BookingStartModeTimeOrDate:";
+    public static final String BACK_TO_DATES = "BackToDates";
+
     private CallbackData() {
     }
 

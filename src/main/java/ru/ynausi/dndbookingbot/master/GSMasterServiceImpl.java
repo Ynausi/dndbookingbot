@@ -58,7 +58,6 @@ public class GSMasterServiceImpl implements GSMasterService {
                         .rowNumber(currentRowNumber)
                         .build();
                 masters.add(master);
-                currentRowNumber++;
             }
             return masters;
         } catch (IOException e) {

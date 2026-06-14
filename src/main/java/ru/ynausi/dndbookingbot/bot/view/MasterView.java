@@ -13,7 +13,6 @@ import ru.ynausi.dndbookingbot.master.MasterService;
 import ru.ynausi.dndbookingbot.master.MasterTextFactory;
 import ru.ynausi.dndbookingbot.schedule.ScheduleService;
 import ru.ynausi.dndbookingbot.schedule.Slot;
-
 import java.time.LocalDate;
 import java.util.*;
 

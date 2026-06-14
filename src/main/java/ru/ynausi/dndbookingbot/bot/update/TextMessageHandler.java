@@ -3,7 +3,6 @@ package ru.ynausi.dndbookingbot.bot.update;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import ru.ynausi.dndbookingbot.admin.AdminService;
-import ru.ynausi.dndbookingbot.booking.BookingSession;
 import ru.ynausi.dndbookingbot.booking.BookingSessionService;
 import ru.ynausi.dndbookingbot.bot.TelegramSender;
 import ru.ynausi.dndbookingbot.bot.command.BotCommands;
@@ -12,8 +11,6 @@ import ru.ynausi.dndbookingbot.bot.view.MainMenuView;
 import ru.ynausi.dndbookingbot.master.Master;
 import ru.ynausi.dndbookingbot.master.MasterService;
 import ru.ynausi.dndbookingbot.session.AdminMasterSessionServiceImpl;
-
-import java.util.List;
 import java.util.Optional;
 
 @Component
