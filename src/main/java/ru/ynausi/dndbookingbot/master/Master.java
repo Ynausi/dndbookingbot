@@ -2,7 +2,7 @@ package ru.ynausi.dndbookingbot.master;
 
 import lombok.Builder;
 
-@Builder
+@Builder(toBuilder = true)
 public record Master(
     Integer id,
     String name,

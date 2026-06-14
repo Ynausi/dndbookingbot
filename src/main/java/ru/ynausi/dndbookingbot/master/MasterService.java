@@ -1,8 +1,5 @@
 package ru.ynausi.dndbookingbot.master;
 
-import ru.ynausi.dndbookingbot.schedule.Slot;
-
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 

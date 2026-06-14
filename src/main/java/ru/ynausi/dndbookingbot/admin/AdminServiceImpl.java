@@ -7,26 +7,27 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService{
-    private final AdminRepository adminRepository;
+    private final AdminCacheService adminCache;
 
     @Override
     public Optional<Admin> getAdmin() {
-        return adminRepository.getAdmin();
+        return adminCache.getAdmin();
     }
 
     @Override
     public void updateAdminTelegramUserIdAndChatId(Long telegramUserId,Long chatId) {
-        adminRepository.updateAdminTelegramUserIdAndChatId(telegramUserId,chatId);
+        adminCache.updateAdminTelegramUserIdAndChatId(telegramUserId,chatId);
     }
 
     @Override
     public boolean checkIfAdmin(String adminCode) {
-        return adminRepository.checkIfAdmin(adminCode);
+        Optional<Admin> admin = adminCache.getAdmin();
+        return admin.filter(value -> adminCode.equals(value.getAdminCode())).isPresent();
     }
 
     @Override
     public void updatePhoto(Long telegramUserId,String fileId,String photoName) {
-        adminRepository.updatePhoto(telegramUserId,fileId,photoName);
+        adminCache.updatePhoto(fileId,photoName);
     }
 
 

@@ -57,7 +57,7 @@ public class PhotoMessageHandler {
     private void updateMasterPhoto(Long chatId,Long telegramUserId,String fileId) {
         Optional<Master> master = masterService.findMasterByTelegramId(telegramUserId);
         if (master.isEmpty()) {
-            sender.sendMessage(chatId,"Что-то пошло не так. Проверьте свой код мастера и начните снова");
+            sender.sendMessage(chatId,"Проверьте свой код мастера и начните снова");
             return;
         }
         masterService.updateMasterPhoto(fileId,master.get());

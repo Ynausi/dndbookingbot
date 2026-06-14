@@ -8,9 +8,7 @@ import ru.ynausi.dndbookingbot.bot.TelegramSender;
 import ru.ynausi.dndbookingbot.master.Master;
 import ru.ynausi.dndbookingbot.master.MasterService;
 import ru.ynausi.dndbookingbot.schedule.Slot;
-
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 
 @Component
 @Builder
@@ -33,7 +31,6 @@ public class BookingTextFactory {
     }
 
     public String buildMasterText(BookingSession bookingSession) {
-        //Optional<Master> master = masterService.findByMasterCode(bookingSession.getSelectedMasterCode());
         String masterName = bookingSession.getSelectedMasterCode() == null
                 ? "Не выбран"
                 : masterService.findByMasterCode(bookingSession.getSelectedMasterCode()).map(Master::name).get();

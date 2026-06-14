@@ -12,47 +12,47 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class MasterServiceImpl implements MasterService{
-    private final MasterRepository masterRepository;
+    private final MasterCacheService masterCache;
 
     @Override
     public List<Master> getMasters() {
-        return masterRepository.getMasters();
+        return masterCache.getMasters();
     }
 
     @Override
     public Optional<Master> getById(String id) {
-        return masterRepository.getMasters().stream()
+        return masterCache.getMasters().stream()
                 .filter(master -> Integer.parseInt(id) == master.id())
                 .findFirst();
     }
 
     @Override
     public Optional<Master> findByMasterCode(String masterCode) {
-        return masterRepository.getMasters().stream()
+        return masterCache.getMasters().stream()
                 .filter(master -> masterCode.equals(master.masterCode()))
                 .findFirst();
     }
 
     @Override
     public List<Master> getActiveMasters() {
-        return masterRepository.getMasters().stream()
+        return masterCache.getMasters().stream()
                 .filter(master-> Boolean.TRUE.equals(master.active()))
                 .collect(Collectors.toList());
     }
 
     @Override
     public void updateMasterTelegramIdAndChatId(Long telegramUserId, Long chatId, Master master) {
-        masterRepository.updateMasterTelegramIdAndChatId(telegramUserId,chatId,master);
+        masterCache.updateMasterTelegramIdAndChatId(telegramUserId,chatId,master);
     }
 
     @Override
     public void updateMasterPhoto(String fileId, Master master) {
-       masterRepository.updateMasterPhoto(fileId,master);
+       masterCache.updateMasterPhoto(fileId,master);
     }
 
     @Override
     public Optional<String> findSheetNameForMaster(String masterCode) {
-        return masterRepository.getMasters().stream()
+        return masterCache.getMasters().stream()
                 .filter(master -> masterCode.equals(master.masterCode()))
                 .map(Master::sheetName)
                 .findFirst();
@@ -60,7 +60,7 @@ public class MasterServiceImpl implements MasterService{
 
     @Override
     public Optional<Master> findMasterByTelegramId(Long telegramUserId) {
-        return masterRepository.getMasters().stream()
+        return masterCache.getMasters().stream()
                 .filter(master-> master.telegramUserId().equals(telegramUserId))
                 .findFirst();
     }

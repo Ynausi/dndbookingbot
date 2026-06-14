@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
@@ -18,6 +19,7 @@ public class BotCommandInitialize {
 
     private final TelegramClient telegramClient;
 
+    @Order(1)
     @EventListener(ApplicationReadyEvent.class)
     public void initCommands() {
         SetMyCommands setMyCommands = SetMyCommands.builder()

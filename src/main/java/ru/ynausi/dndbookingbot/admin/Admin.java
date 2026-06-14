@@ -1,17 +1,15 @@
 package ru.ynausi.dndbookingbot.admin;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Admin {
-    private String telegramUserId;
-    private String chatId;
+    private Long telegramUserId;
+    private Long chatId;
     private String adminCode;
     private String adventurePhotoId;
     private String oneShotPhotoId;

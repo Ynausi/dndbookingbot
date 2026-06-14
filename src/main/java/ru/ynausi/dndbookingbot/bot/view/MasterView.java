@@ -13,7 +13,6 @@ import ru.ynausi.dndbookingbot.master.MasterService;
 import ru.ynausi.dndbookingbot.master.MasterTextFactory;
 import ru.ynausi.dndbookingbot.schedule.ScheduleService;
 import ru.ynausi.dndbookingbot.schedule.Slot;
-
 import java.time.LocalDate;
 import java.util.*;
 
@@ -34,6 +33,7 @@ public class MasterView {
         this.masterKeyboardFactory = masterKeyboardFactory;
         this.scheduleService = scheduleService;
     }
+
 
     public Optional<Integer> showMasters(Long chatId) {
         List<Master> masters = masterService.getActiveMasters();

@@ -1,7 +1,6 @@
 package ru.ynausi.dndbookingbot.bot.update;
 
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.message.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -10,7 +9,6 @@ import ru.ynausi.dndbookingbot.bot.TelegramSender;
 import ru.ynausi.dndbookingbot.bot.callback.CallbackData;
 import ru.ynausi.dndbookingbot.bot.view.BookingTextFactory;
 import ru.ynausi.dndbookingbot.bot.view.BookingView;
-import ru.ynausi.dndbookingbot.bot.view.MainMenuView;
 import ru.ynausi.dndbookingbot.bot.view.MasterView;
 import ru.ynausi.dndbookingbot.master.Master;
 import ru.ynausi.dndbookingbot.master.MasterKeyboardFactory;
@@ -32,7 +30,6 @@ public class CallbackQueryHandler {
     private final BookingSessionServiceImpl bookingSessionService;
     private final MasterService masterService;
     private final AdminMasterSessionServiceImpl sessionService;
-    private final MainMenuView mainMenuView;
     private final BookingView bookingView;
     private final MasterView masterView;
     private final ScheduleService scheduleService;
@@ -44,13 +41,13 @@ public class CallbackQueryHandler {
 
     public CallbackQueryHandler(TelegramSender sender, BookingSessionServiceImpl bookingSessionService,
                                 MasterService masterService, AdminMasterSessionServiceImpl sessionService,
-                                MainMenuView mainMenuView, BookingView bookingView,
-                                MasterView masterView, ScheduleService scheduleService, BookingTextFactory bookingTextFactory, MasterTextFactory masterTextFactory, MasterKeyboardFactory masterKeyboardFactory) {
+                                BookingView bookingView, MasterView masterView,
+                                ScheduleService scheduleService, BookingTextFactory bookingTextFactory,
+                                MasterTextFactory masterTextFactory, MasterKeyboardFactory masterKeyboardFactory) {
         this.sender = sender;
         this.bookingSessionService = bookingSessionService;
         this.masterService = masterService;
         this.sessionService = sessionService;
-        this.mainMenuView = mainMenuView;
         this.bookingView = bookingView;
         this.masterView = masterView;
         this.scheduleService = scheduleService;
@@ -60,6 +57,8 @@ public class CallbackQueryHandler {
     }
 
     public void handle(CallbackQuery callbackQuery) {
+        sender.answerCallbackQuery(callbackQuery);
+
         String data = callbackQuery.getData();
         Long chatId = callbackQuery.getMessage().getChatId();
         Long telegramUserId = callbackQuery.getFrom().getId();
@@ -433,13 +432,13 @@ public class CallbackQueryHandler {
         sender.sendMessage(chatId,"Вы успешно записались на "
                 + time
                 + " "
-                + session.getSelectedDate()
+                + session.getSelectedDate().format(DATE_FORMATTER)
                 + ". \n"
                 + "Ждём вас!"
         );
-        sender.sendMessage(Long.valueOf(master.get().chatId()),
+        sender.sendMessage(master.get().chatId(),
                 "У вас забронировали игру "
-                        + session.getSelectedDate()
+                        + session.getSelectedDate().format(DATE_FORMATTER)
                         + " "
                         + time
                         + " @" + session.getUserName()

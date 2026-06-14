@@ -1,4 +1,4 @@
-package ru.ynausi.dndbookingbot.googleSheets;
+package ru.ynausi.dndbookingbot.master;
 
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.UpdateValuesResponse;
@@ -7,19 +7,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.ynausi.dndbookingbot.configuration.GoogleSheetsProperties;
-import ru.ynausi.dndbookingbot.master.Master;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class GSMasterServiceImpl implements GSMasterService{
+public class GSMasterServiceImpl implements GSMasterService {
     private final Sheets sheets;
     private final GoogleSheetsProperties properties;
 
@@ -32,11 +27,19 @@ public class GSMasterServiceImpl implements GSMasterService{
                     .get(properties.spreadSheetId(), range)
                     .execute();
             List<List<Object>> rows = response.getValues();
-            Map<String,Integer> headerMap = readHeader();
+            /// //Формирую список заголовков
+            List<Object> headerRows = rows.getFirst();
+            Map<String,Integer> headerMap = new HashMap<>();
+            int i = 0;
+            for (Object header : headerRows) {
+                headerMap.put(header.toString(), i);
+                i++;
+            }
             if (headerMap.isEmpty()) {
                 log.error("Ошибка при чтении заголовков в листе Мастеров");
                 return List.of();
             }
+            ///
             List<Master> masters = new ArrayList<>();
             for (int rowIndex = 1; rowIndex < rows.size(); rowIndex++) {
                 List<Object> row = rows.get(rowIndex);
@@ -55,7 +58,6 @@ public class GSMasterServiceImpl implements GSMasterService{
                         .rowNumber(currentRowNumber)
                         .build();
                 masters.add(master);
-                currentRowNumber++;
             }
             return masters;
         } catch (IOException e) {
@@ -65,7 +67,7 @@ public class GSMasterServiceImpl implements GSMasterService{
     }
 
     @Override
-    public void updateMasterTelegramIdAndChatId(Long telegramUserId,Long chatId,Master master) {
+    public boolean updateMasterTelegramIdAndChatId(Long telegramUserId,Long chatId,Master master) {
         log.info("Пробую записать мастера: telegramUserId={}, chatId={}, masterName={}",
                 telegramUserId, chatId, master.name());
         Map<String,Integer> headerMap = readHeader();
@@ -90,13 +92,15 @@ public class GSMasterServiceImpl implements GSMasterService{
                             .execute();
             log.info("Обновлено ячеек telegramId: {}", resultTelegramId.getUpdatedCells());
             log.info("Обновлено ячеек chatId: {}",resultChatId.getUpdatedCells());
+            return true;
         } catch (IOException e ) {
             log.error("Ошибка при записи данных мастера в Google Sheets", e);
         }
+        return false;
     }
 
     @Override
-    public void updateMasterPhoto(String fileId,Master master) {
+    public boolean updateMasterPhoto(String fileId,Master master) {
         log.info("Пробую записать мастера: fileId={}",
                 fileId);
         Map<String,Integer> headerMap = readHeader();
@@ -111,9 +115,11 @@ public class GSMasterServiceImpl implements GSMasterService{
                     .setValueInputOption("RAW")
                     .execute();
             log.info("Обновлено ячеек: {}", result.getUpdatedCells());
+            return true;
         } catch (IOException e) {
             log.error("Ошибка при записи данных мастера в Google Sheets", e);
         }
+        return false;
     }
 
     private Long parseLongOrNull(String value) {
@@ -157,20 +163,6 @@ public class GSMasterServiceImpl implements GSMasterService{
         }
 
         return columnName.toString();
-    }
-
-    private String getCell(List<List<Object>> rows, int rowIndex, int columnIndex) {
-        if (rows == null || rows.size() <= rowIndex) {
-            return "";
-        }
-
-        List<Object> row = rows.get(rowIndex);
-
-        if (row == null || row.size() <= columnIndex || row.get(columnIndex) == null) {
-            return "";
-        }
-
-        return row.get(columnIndex).toString();
     }
 
     private String getCell(List<Object> row,int index) {
